@@ -1,0 +1,14 @@
+
+URL : {{elastic-gcp-host}}:9200/movies/_search?
+Method : POST
+
+{
+    "query": {
+        "match_phrase_prefix" : {
+            "name" : {
+                "query" : "know man",
+                "max_expansions" : 10
+            }
+        }
+    }
+}
