@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 	"io/ioutil"
-
 	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic"
 	"github.com/teris-io/shortid"
@@ -17,7 +16,15 @@ import (
 const (
 	elasticIndexName = "products"
 	elasticTypeName  = "product"
+	elasticURL1 ="http://35.202.99.46:9200"
+	elasticURL2 ="http://35.192.32.150:9200"
+	elasticURL3 ="http://35.224.21.162:9200"
+	elasticUser ="elastic"
+	elasticPwd ="hKVd9xXQ"
 )
+
+
+
 
 type Document struct {
 	ID        string    `json:"id"`
@@ -81,17 +88,27 @@ var dataFilePath string="./products.json"
 func main() {
 	var err error
 
-	elasticURL:="http://localhost:9200"
 	// Create Elastic client and wait for Elasticsearch to be ready
 	for {
+
+		// client, err := elastic.NewClient(
+		//   elastic.SetURL("http://127.0.0.1:9200", "http://127.0.0.1:9201"),
+		//   elastic.SetBasicAuth("user", "secret"))
+
+
 		elasticClient, err = elastic.NewClient(
-			elastic.SetURL(elasticURL),
-			elastic.SetSniff(false),
-		)
+			elastic.SetURL(elasticURL1,elasticURL2,elasticURL3),
+			elastic.SetBasicAuth(elasticUser, elasticPwd),
+			elastic.SetSniff(false))
+
 		if err != nil {
 			log.Println(err)
 			// Retry every 3 seconds
-			time.Sleep(3 * time.Second)
+			if elastic.IsConnErr(err) !=true {
+				log.Println("Yes it is connection Error")
+			}
+
+			time.Sleep(6 * time.Second)
 		} else {
 			break
 		}
@@ -103,10 +120,20 @@ func main() {
 	r.GET("/search", searchEndpoint)
 	r.GET("/autocomplete", autocompleteEndpoint)
 
+
 	if err = r.Run(":8080"); err != nil {
 		log.Fatal(err)
 	}
 }
+
+
+func rootService(c *gin.Context) {
+	c.Param("article_id")
+	errorResponse(c, http.StatusBadRequest, c.Request.URL.Path)
+	return
+
+}
+
 
 func bulkUploadEndpoint(c *gin.Context) {
 	// Parse request
