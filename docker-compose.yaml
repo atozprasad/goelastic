@@ -1,8 +1,8 @@
 version: '3.5'
 services:
   search_api:
-    container_name: 'search_api'
-    build: ./search-api
+    container_name: 'goelastic'
+    build: ./goelastic
     restart: 'on-failure'
     ports:
       - '8080:8080'
