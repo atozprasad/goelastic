@@ -48,16 +48,34 @@ type DocumentResponse struct {
 	Name     string    `json:"name"`
 //	CreatedAt time.Time `json:"created_at"`
 }
-
 type SearchResponse struct {
 	Time      string             `json:"time"`
 	Hits      string             `json:"hits"`
 	Documents []DocumentResponse `json:"documents"`
 }
 
+//####################################Autocomplete#######################################
+
+	type AutocompleteDocument struct {
+			Score		 float32		`json:"score"`
+			Text		 string			`json:"text"`
+			Name		 string			`json:"name"`
+	    AutocompletePayload struct  {
+				FirstName	string `json:"first_name"`
+		 		ID				int 	 `json:"id"`
+		 		LastName	string `json:"last_name"`
+			}  `json:"payload"`
+	}
+ 	type AutocompleteResponse struct {
+ 		Objects []AutocompleteDocument
+ }
+//####################################Autocomplete#######################################
 var (
 	elasticClient *elastic.Client
-)
+	)
+	var skip = 0
+	var take = 10
+
 var dataFilePath string="./products.json"
 
 func main() {
@@ -83,6 +101,7 @@ func main() {
 	r.POST("/bulkupdload", bulkUploadEndpoint)
 	r.POST("/fileupload", createFromFileEndpoint)
 	r.GET("/search", searchEndpoint)
+	r.GET("/autocomplete", autocompleteEndpoint)
 
 	if err = r.Run(":8080"); err != nil {
 		log.Fatal(err)
@@ -135,8 +154,6 @@ func searchEndpoint(c *gin.Context) {
 			errorResponse(c, http.StatusBadRequest, "Query not specified")
 			return
 		}
-		skip := 0
-		take := 10
 		if i, err := strconv.Atoi(c.Query("skip")); err == nil {
 			skip = i
 		}
@@ -171,7 +188,51 @@ func searchEndpoint(c *gin.Context) {
 		res.Documents = docs
 		c.JSON(http.StatusOK, res)
 }
-
+func autocompleteEndpoint(c *gin.Context) {
+	// Parse request
+		query := c.Query("query")
+		if query == "" {
+			errorResponse(c, http.StatusBadRequest, "Query not specified")
+			return
+		}
+		if i, err := strconv.Atoi(c.Query("skip")); err == nil {
+			skip = i
+		}
+		if i, err := strconv.Atoi(c.Query("take")); err == nil {
+			take = i
+		}
+		// Perform search
+		esQuery := elastic.NewMultiMatchQuery(query, "name").
+			Fuzziness("2").
+			MinimumShouldMatch("2")
+		result, err := elasticClient.Search().
+			Index(elasticIndexName).
+			Query(esQuery).
+			From(skip).Size(take).
+			Do(c.Request.Context())
+		if err != nil {
+			log.Println(err)
+			errorResponse(c, http.StatusInternalServerError, "Something went wrong")
+			return
+		}
+		res :=[]AutocompleteDocument{}
+		// Transform search results before returning them
+		docs := make([]AutocompleteDocument, 0)
+		i:=0
+		for _, hit := range result.Hits.Hits {
+			i++
+			var doc AutocompleteDocument
+			json.Unmarshal(*hit.Source, &doc)
+			doc.Text=doc.Name
+			doc.Score=1.0
+	    doc.AutocompletePayload.FirstName=""
+			doc.AutocompletePayload.ID=i
+			doc.AutocompletePayload.LastName=""
+			docs = append(docs, doc)
+		}
+		res= docs
+		c.JSON(http.StatusOK, res)
+}
 func errorResponse(c *gin.Context, code int, err string) {
 		c.JSON(code, gin.H{
 			"error": err,
