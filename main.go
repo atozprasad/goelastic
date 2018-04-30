@@ -11,9 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic"
 	"github.com/teris-io/shortid"
+	"os"
 )
 
-const (
+var (
 	elasticIndexName = "products"
 	elasticTypeName  = "product"
 	elasticURL1 ="http://35.202.99.46:9200"
@@ -91,10 +92,7 @@ func main() {
 	// Create Elastic client and wait for Elasticsearch to be ready
 	for {
 
-		// client, err := elastic.NewClient(
-		//   elastic.SetURL("http://127.0.0.1:9200", "http://127.0.0.1:9201"),
-		//   elastic.SetBasicAuth("user", "secret"))
-
+	 LoadEvnrironmentValues()
 
 		elasticClient, err = elastic.NewClient(
 			elastic.SetURL(elasticURL1,elasticURL2,elasticURL3),
@@ -107,7 +105,6 @@ func main() {
 			if elastic.IsConnErr(err) !=true {
 				log.Println("Yes it is connection Error")
 			}
-
 			time.Sleep(6 * time.Second)
 		} else {
 			break
@@ -284,4 +281,57 @@ func AddProductsToIndex(docs []DocumentRequest,c *gin.Context, elasticClient *el
 			return err
 		}
 		return nil
+}
+
+
+func LoadEvnrironmentValues() {
+	elasticIndexName=os.Getenv("APP_ELASTIC_INDEX_NAME")
+	if elasticIndexName == "" {
+		log.Println("Missing Environment variable : APP_ELASTIC_INDEX_NAME. Setting to default name products")
+		elasticIndexName="products"
+	}
+
+	elasticTypeName=os.Getenv("APP_ELASTIC_TYPE_NAME")
+	if elasticTypeName == "" {
+		log.Println("Missing Environment variable : APP_ELASTIC_TYPE_NAME. Setting to default name product")
+		elasticTypeName="product"
+	}
+	elasticURL1=os.Getenv("APP_ELASTIC_URL1")
+	if elasticURL1 == "" {
+		log.Println("Missing Environment variable : APP_ELASTIC_URL1. Setting to default value to http://localhos:9200")
+		elasticTypeName="http://localhost:9200"
+	}
+	elasticURL2=os.Getenv("APP_ELASTIC_URL2")
+	if elasticURL2 == "" {
+		log.Println("Missing Environment variable : APP_ELASTIC_URL2. Setting to default value to http://localhos:9201")
+		elasticTypeName="http://localhost:9201"
+	}
+
+	elasticURL3=os.Getenv("APP_ELASTIC_URL3")
+	if elasticURL3 == "" {
+		log.Println("Missing Environment variable : APP_ELASTIC_URL2. Setting to default value to http://localhos:9203")
+		elasticTypeName="http://localhost:9203"
+	}
+	elasticUser=os.Getenv("APP_ELASTIC_USER")
+	if elasticUser == "" {
+		log.Println("Missing Environment variable : APP_ELASTIC_USER. Setting to default value to empty")
+		elasticTypeName="http://localhost:9203"
+	}
+	elasticPwd=os.Getenv("APP_ELASTIC_PASSWORD")
+	if elasticPwd == "" {
+		log.Println("Missing Environment variable : APP_ELASTIC_PASSWORD. Setting to default value to empty")
+		elasticTypeName="http://localhost:9203"
+	}
+
+
+
+	elasticIndexName = "products"
+	elasticTypeName  = "product"
+	elasticURL1 ="http://35.202.99.46:9200"
+	elasticURL2 ="http://35.192.32.150:9200"
+	elasticURL3 ="http://35.224.21.162:9200"
+	elasticUser ="elastic"
+	elasticPwd ="hKVd9xXQ"
+
+
 }
