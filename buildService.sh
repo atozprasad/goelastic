@@ -24,6 +24,7 @@ Commands:
 Flags:
   -d, --debug                       Output in debug mode
   -p, --path                        APP_HOME ( APP_WORKSPACE ) path
+  -n, --APP name                    Application name
   -v, --version                     Release Version number in semantic verisonformat ( ex 0.0.1 )
 EOF
 }
@@ -40,6 +41,7 @@ fun_Error() {
 
 export GOOS=""
 export GOARCH=""
+export APP_NAME="goelastic"
 
 ##########################################################################################
 ###
@@ -64,6 +66,10 @@ case $key in
     ;;
     -v|--version)
     BUILD_VERSION="$2"
+    shift # past argument
+    ;;
+    -n|--name)
+    APP_NAME="$2"
     shift # past argument
     ;;
     -h|--help)
@@ -140,12 +146,16 @@ fun_Notify "Go Environment `go env`"
 for GOOS in darwin linux ; do
   for GOARCH in amd64 ; do
     echo "Building  goelastic_${VERSION_ID}_${GOOS}_${GOARCH}"
-    export GOHOSTOS=darwin
     export GOOS=$GOOS
     export GOARCH=$GOARCH
     ##Make the actual binary
   #go build -ldflags="-s -w"
-    go build
+  BUILD_VERSION="$2"
+  shift # past argument
+  ;;
+  -n|--name)
+  APP_NAME="$2"
+    go build {$APP_NAME}_{$BUILD_VERSION}_{$GOOS}
   done
 done
 
