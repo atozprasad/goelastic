@@ -22,7 +22,11 @@ var (
 	elasticURL3 ="http://35.224.21.162:9200"
 	elasticUser ="elastic"
 	elasticPwd ="hKVd9xXQ"
+	retryCount int=10
+	retryDelay int=3
+	servicePort int =8080
 )
+
 
 
 
@@ -90,45 +94,45 @@ func main() {
 	var err error
 
 	// Create Elastic client and wait for Elasticsearch to be ready
-	for {
-
 	 LoadEvnrironmentValues()
-
+	 for i := 0; i < retryCount; i++{
 		elasticClient, err = elastic.NewClient(
 			elastic.SetURL(elasticURL1,elasticURL2,elasticURL3),
 			elastic.SetBasicAuth(elasticUser, elasticPwd),
 			elastic.SetSniff(false))
-
+		log.Println("Establishing connection to Elastic")
 		if err != nil {
 			log.Println(err)
-			// Retry every 3 seconds
 			if elastic.IsConnErr(err) !=true {
 				log.Println("Yes it is connection Error")
 			}
-			time.Sleep(6 * time.Second)
+			time.Sleep(time.Duration(retryDelay) * time.Second)
 		} else {
 			break
 		}
 	}
 	// Start HTTP server
 	r := gin.Default()
+//	r := gin.New()
 	r.POST("/bulkupdload", bulkUploadEndpoint)
 	r.POST("/fileupload", createFromFileEndpoint)
 	r.GET("/search", searchEndpoint)
 	r.GET("/autocomplete", autocompleteEndpoint)
-
-
-	if err = r.Run(":8080"); err != nil {
+	r.GET("/",rootHander)
+	if err = r.Run(":"+strconv.Itoa(servicePort)); err != nil {
 		log.Fatal(err)
 	}
 }
 
 
-func rootService(c *gin.Context) {
-	c.Param("article_id")
-	errorResponse(c, http.StatusBadRequest, c.Request.URL.Path)
+func rootHander(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"GET /search": "APPURL/search?query=productname",
+		"POST /bulkupdload": "POST Array of Products ",
+		"GET /fileupload": "Transfers the data from file to Elastic",
+		"GET /autocomplete": "APPURL/search?query=productname",
+	})
 	return
-
 }
 
 
@@ -271,7 +275,9 @@ func AddProductsToIndex(docs []DocumentRequest,c *gin.Context, elasticClient *el
 		Type(elasticTypeName)
 		for _, d := range docs {
 			doc := Document{
-				ID:        shortid.MustGenerate(),
+				ID: shortid.MustGenerate(),
+				//t := time.Now()
+				//ID:  t.String(),
 				Name:     d.Name,
 				}
 			bulk.Add(elastic.NewBulkIndexRequest().Id(doc.ID).Doc(doc))
@@ -322,16 +328,11 @@ func LoadEvnrironmentValues() {
 		log.Println("Missing Environment variable : APP_ELASTIC_PASSWORD. Setting to default value to empty")
 		elasticTypeName="http://localhost:9203"
 	}
-
-
-
-	elasticIndexName = "products"
-	elasticTypeName  = "product"
-	elasticURL1 ="http://35.202.99.46:9200"
-	elasticURL2 ="http://35.192.32.150:9200"
-	elasticURL3 ="http://35.224.21.162:9200"
-	elasticUser ="elastic"
-	elasticPwd ="hKVd9xXQ"
-
+	portstr:=os.Getenv("APP_SERVING_PORT")
+	servicePort,_=strconv.Atoi(portstr)
+	if portstr == "" {
+		log.Println("Missing Environment variable : APP_SERVING_PORT. Setting to default value to 8080")
+		servicePort=8080
+	}
 
 }
