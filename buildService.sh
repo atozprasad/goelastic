@@ -145,17 +145,12 @@ fun_Notify "Go Environment `go env`"
 #for GOOS in darwin linux windows; do
 for GOOS in darwin linux ; do
   for GOARCH in amd64 ; do
-    echo "Building  goelastic_${VERSION_ID}_${GOOS}_${GOARCH}"
+    echo "Building  ${APP_NAME}_${VERSION_ID}_${GOOS}_${GOARCH}"
     export GOOS=$GOOS
     export GOARCH=$GOARCH
     ##Make the actual binary
   #go build -ldflags="-s -w"
-  BUILD_VERSION="$2"
-  shift # past argument
-  ;;
-  -n|--name)
-  APP_NAME="$2"
-    go build {$APP_NAME}_{$BUILD_VERSION}_{$GOOS}
+    go build  -o ${APP_NAME}_${VERSION_ID}_${GOOS}_${GOARCH}
   done
 done
 
