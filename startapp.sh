@@ -6,4 +6,13 @@ export APP_ELASTIC_URL3="http://35.224.21.162:9200"
 export APP_ELASTIC_USER="elastic"
 export APP_ELASTIC_PASSWORD="hKVd9xXQ"
 export GIN_MODE=debug
-./goelastic
+
+hostos=`uname -a`
+./autocomplete_0.1_linux_amd64
+
+if [ $hostos == "Linux" ]
+then
+	./autocomplete_0.1_linux_amd64
+else
+	./autocomplete_0.1_darwin_amd64
+fi
