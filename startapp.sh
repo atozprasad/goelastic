@@ -12,7 +12,7 @@ hostos=`uname -a`
 
 if [ $hostos == "Linux" ]
 then
-	./autocomplete_0.1_linux_amd64
+	./autocomplete_0.1_linux_amd64 &
 else
-	./autocomplete_0.1_darwin_amd64
+	./autocomplete_0.1_darwin_amd64 &
 fi
